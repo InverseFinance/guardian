@@ -77,30 +77,66 @@ contract GuardianTest is Test {
 
         // Test that only the deployer can set deployer
         vm.prank(rwg);
-        try guardian.setDeployer(newDeployer) {
-            fail("setDeployer should only be callable by deployer");
+        try guardian.setPendingDeployer(newDeployer) {
+            fail("setPendingDeployer should only be callable by deployer");
         } catch Error(string memory reason) {
             assertEq(reason, "Guardian: not deployer");
         }
 
         // Test that the deployer can set deployer
-        guardian.setDeployer(newDeployer);
+        guardian.setPendingDeployer(newDeployer);
+        assertEq(guardian.pendingDeployer(), newDeployer);
+    }
+
+    function testClaimDeployer() public {
+        address newDeployer = address(0xdeadbeef);
+
+        // Test that only the deployer can set deployer
+        guardian.setPendingDeployer(newDeployer);
+        vm.prank(address(0xc0ffee));
+        try guardian.claimDeployer() {
+            fail("claimDeployer should only be callable by pending deployer");
+        } catch Error(string memory reason) {
+            assertEq(reason, "Guardian: not pending deployer");
+        }
+
+        // Test that the deployer can set deployer
+        vm.prank(newDeployer);
+        guardian.claimDeployer();
         assertEq(guardian.deployer(), newDeployer);
     }
 
-    function testSetRwg() public {
+    function testSetPendingRwg() public {
         address newRwg = address(0xdeadbeef);
 
         // Test that only the rwg can set rwg
-        try guardian.setRwg(newRwg) {
-            fail("setRwg should only be callable by rwg");
+        try guardian.setPendingRwg(newRwg) {
+            fail("setPendingRwg should only be callable by rwg");
         } catch Error(string memory reason) {
             assertEq(reason, "Guardian: not rwg");
         }
 
         // Test that the rwg can set rwg
         vm.prank(rwg);
-        guardian.setRwg(newRwg);
+        guardian.setPendingRwg(newRwg);
+        assertEq(guardian.pendingRwg(), newRwg);
+    }
+
+    function testClaimRwg() public {
+        address newRwg = address(0xdeadbeef);
+
+        // Test that only the rwg can set rwg
+        vm.prank(rwg);
+        guardian.setPendingRwg(newRwg);
+        try guardian.claimRwg() {
+            fail("claimRwg should only be callable by rwg");
+        } catch Error(string memory reason) {
+            assertEq(reason, "Guardian: not pending rwg");
+        }
+
+        // Test that the rwg can set rwg
+        vm.prank(newRwg);
+        guardian.claimRwg();
         assertEq(guardian.rwg(), newRwg);
     }
 }
