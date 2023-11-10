@@ -9,7 +9,9 @@ contract Guardian {
 
     IGovernorMills public immutable governorMills;
     address public deployer;
+    address public pendingDeployer;
     address public rwg;
+    address public pendingRwg;
     mapping (uint => bool) public cancellableProposals;
 
     constructor(IGovernorMills _governorMills, address _rwg) {
@@ -29,14 +31,25 @@ contract Guardian {
         governorMills.cancel(proposalId);
     }
 
-    function setRwg(address _rwg) external {
+    function setPendingRwg(address _rwg) external {
         require(msg.sender == rwg, "Guardian: not rwg");
-        rwg = _rwg;
+        pendingRwg = _rwg;
     }
 
-    function setDeployer(address _deployer) external {
+    function claimRwg() external {
+        require(msg.sender == pendingRwg, "Guardian: not pending rwg");
+        rwg = pendingRwg;
+        pendingRwg = address(0);
+    }
+
+    function setPendingDeployer(address _deployer) external {
         require(msg.sender == deployer, "Guardian: not deployer");
-        deployer = _deployer;
+        pendingDeployer = _deployer;
     }
 
+    function claimDeployer() external {
+        require(msg.sender == pendingDeployer, "Guardian: not pending deployer");
+        deployer = pendingDeployer;
+        pendingDeployer = address(0);
+    }
 }
